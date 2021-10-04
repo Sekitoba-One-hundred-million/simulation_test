@@ -39,7 +39,7 @@ def main( update = False ):
     result = None
     
     if not update:
-        result = dm.pickle_load( "straight_horce_body__learn_data.pickle" )
+        result = dm.pickle_load( "test_simu_learn_data.pickle" )
 
     if result == None:
         result = {}
@@ -51,6 +51,7 @@ def main( update = False ):
     result["test_answer"] = []
     result["test_teacher"] = []
     result["test_count"] = []
+    result["year"] = []
     
     simu_data = {}
     max_diff = -1
@@ -159,19 +160,20 @@ def main( update = False ):
 
             count += 1
             max_diff = max( int( max( cd.diff(), 0 ) * 10 ), max_diff )
+
+            result["year"].append( year )
+            result["answer"].append( min( int( max( cd.diff(), 0 ) * 10 ), 100 ) )
+            result["teacher"].append( t )
             
-            if not year == "2020":
-                result["answer"].append( int( max( cd.diff(), 0 ) * 10 ) )
-                result["teacher"].append( t )
-            else:
+            if year == "2020":
                 result["test_answer"].append( cd.diff() )
-                result["test_teacher"].append( t )
+                result["test_teacher"].append( t )                
 
         if year == "2020":
             result["test_count"].append( count )
 
     print( len( result["test_answer"] ) , len( result["test_teacher"] ), sum( result["test_count"] ) )
-    #dm.pickle_upload( "straight_horce_body_learn_data.pickle", result )
+    dm.pickle_upload( "test_simu_learn_data.pickle", result )
     #dm.pickle_upload( "straight_horce_body_minmax.pickle", hm )
     #dm.pickle_upload( "straight_horce_body_simu_data.pickle", simu_data )
 
