@@ -52,7 +52,7 @@ class train_index_get:
 
         return result
 
-    def main( self, race_data, race_id ):
+    def main( self, race_data, horce_data, race_id ):
         result = {}
         fail_dic = { "time": 0, "a": 0, "b": 0 }
         t_instance = []
@@ -64,8 +64,8 @@ class train_index_get:
 
         for k in race_data.keys():
             horce_name = k.replace( " ", "" )
-            file_name = lib.home_dir + "/database/" + horce_name + ".txt"
-            current_data, past_data = lib.race_check( file_name, year, day, num, race_place_num )#今回と過去のデータに分ける
+            current_data, past_data = lib.race_check( horce_data[horce_name],
+                                                      year, day, num, race_place_num )#今回と過去のデータに分ける
 
             cd = lib.current_data( current_data )
             pd = lib.past_data( past_data, current_data )

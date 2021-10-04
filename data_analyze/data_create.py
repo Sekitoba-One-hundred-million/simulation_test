@@ -92,8 +92,7 @@ def main( update = False ):
         rci_info = race_cource_info[key_place][key_kind][info_key_dist]["info"]
         race_limb = [0] * 9
         count = 0
-        train_index_list = train_index.main( race_data[k], race_id )
-        print( train_index_list )
+        train_index_list = train_index.main( race_data[k], horce_data, race_id )
 
         for kk in race_data[k].keys():
             horce_name = kk.replace( " ", "" )
@@ -154,6 +153,9 @@ def main( update = False ):
             dm.dn.append( t, pd.race_interval(), "中週" )
             dm.dn.append( t, pd.average_speed(), "平均速度" )
             dm.dn.append( t, pd.pace_up_check(), "ペースと上りの関係" )
+            dm.dn.append( t, train_index_list[count]["a"], "調教ペースの傾き" )
+            dm.dn.append( t, train_index_list[count]["b"], "調教ペースの切片" )
+            dm.dn.append( t, train_index_list[count]["time"], "調教ペースの指数タイム" )
 
             count += 1
             max_diff = max( int( max( cd.diff(), 0 ) * 10 ), max_diff )
