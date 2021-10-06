@@ -33,5 +33,5 @@ def main( data ):
     
     model = nn.TestNN( n_units, a_units + 1 )
     model = nn.main( learn_data, model )
-
+    
     return model

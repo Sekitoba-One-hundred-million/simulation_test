@@ -166,10 +166,10 @@ def main( update = False ):
             result["teacher"].append( t )
             
             if year == "2020":
-                result["test_answer"].append( cd.diff() )
+                result["test_answer"].append( { "rank": cd.rank(), "odds": cd.odds(), "count": count } )
                 result["test_teacher"].append( t )                
 
-        if year == "2020":
+        if year == "2020" and not count == 0:
             result["test_count"].append( count )
 
     print( len( result["test_answer"] ) , len( result["test_teacher"] ), sum( result["test_count"] ) )

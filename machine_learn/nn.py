@@ -75,7 +75,7 @@ class TestNN( Chain ):
         #h10 = F.softmax( self.l10( h9 ) )
         h30 = self.l30( h11 )
 
-        return h30
+        return F.softmax( h30 )
 
 def test( test_teacher, test_answer, model ):
     predict_answer = model.forward( Variable( np.array( test_teacher, dtype = np.float32 ) ) ).data
