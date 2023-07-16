@@ -78,13 +78,14 @@ def simulation( score_rate, stand_score_rate, softmax_score_rate, rate_score_rat
         for i in range( 0, len( horce_list ) ):
             horce_list[i]["stand_score"] = stand_score_list[i]
             horce_list[i]["softmax_score"] = softmax_score_list[i]
-            rate_score_list.append( horce_list[i]["score"] * score_rate + horce_list[i]["stand_score"] * stand_score_rate + horce_list[i]["softmax_score"] * softmax_score_rate )
+            score = horce_list[i]["score"] * score_rate + horce_list[i]["stand_score"] * stand_score_rate + horce_list[i]["softmax_score"] * softmax_score_rate
+            rate_score_list.append( score )
 
-        rate_score_list = lib.softmax( rate_score_list )
+        rate_score_list = lib.softmax_test( rate_score_list )
 
         for i in range( 0, len( horce_list ) ):
             horce_list[i]["rate_score"] = rate_score_list[i]
-        
+
         sort_result = sorted( horce_list, key=lambda x:x["score"], reverse = True )
         use_horce_num = []
         bc = 1
@@ -97,13 +98,12 @@ def simulation( score_rate, stand_score_rate, softmax_score_rate, rate_score_rat
             odds = sort_result[i]["odds"]
             rank = sort_result[i]["rank"]
             
-            #rate = ( score / 15 ) + ( stand_score / 15 ) + ( softmax_score / 14 )
             rate = sort_result[i]["rate_score"] / ( ( i + 1 ) * rate_score_rate )
             ex = rate * odds
 
             if ex < 1:
                 continue
-            
+
             bc = 1#int( score * odds )
             buy = True
             test_result["bet_count"] += bc
@@ -136,7 +136,13 @@ def main():
     json.dump( study.best_params, f )
     f.close()
 
-    simulation( study.best_params["score_rate"], \
-               study.best_params["stand_score_rate"], \
-               study.best_params["softmax_score_rate"], \
-               study.best_params["rate_score_rate"] )
+    f = open( "best_params.json", "r" )
+    best_params = json.load( f )
+    f.close()
+
+    #best_params = {'score_rate': 6.369751754732328, 'stand_score_rate': 9.567567194497194, 'softmax_score_rate': 8.852758434407427, 'rate_score_rate': 4.570747774400839}
+    
+    simulation( best_params["score_rate"], \
+               best_params["stand_score_rate"], \
+               best_params["softmax_score_rate"], \
+               best_params["rate_score_rate"] )
