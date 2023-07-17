@@ -106,7 +106,10 @@ def main( rank_model, data, kernel_data ):
         except:
             return {}
 
-    for race_id in tqdm( data.keys() ):
+    race_id_list = list( data.keys() )
+    random.shuffle( race_id_list )
+    
+    for race_id in tqdm( race_id_list ):
         year = race_id[0:4]
         number = race_id[-2:]
         
@@ -203,7 +206,8 @@ def main( rank_model, data, kernel_data ):
                     bc["rate"] += partern["score"]
 
             
-        c = 30
+        #c = int( have_money / 50 )
+        c = 50
         
         for i in range( 0, c ):
             index, score = best_index_get( partern_list, bet_candidate )
@@ -220,6 +224,7 @@ def main( rank_model, data, kernel_data ):
                 
             buy = True
             test_result["bet_count"] += bc["bet_count"]
+            have_money -= bc["bet_count"]
             
             if rank_1 <= 3 and rank_2 <= 3:
                 try:
@@ -229,9 +234,11 @@ def main( rank_model, data, kernel_data ):
                     
                 test_result["win"] += 1
                 test_result["money"] += wide_odds * bc["bet_count"]
+                have_money += wide_odds * bc["bet_count"]
 
         if buy:
             test_result["count"] += 1
+            move_money_list.append( have_money )
 
     recovery_rate = ( test_result["money"] / test_result["bet_count"] ) * 100
     win_rate = ( test_result["win"] / test_result["count"] ) * 100
@@ -241,3 +248,6 @@ def main( rank_model, data, kernel_data ):
     print( "ワイド 勝率{}%".format( win_rate ) )
     print( "賭けた回数{}回".format( test_result["bet_count"] ) )
     print( "賭けたレース数{}回".format( test_result["count"] ) )
+
+    plt.plot( list( range( 0, len( move_money_list ) ) ), move_money_list )
+    plt.savefig( "/Volumes/Gilgamesh/move_money.png" )
