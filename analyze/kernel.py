@@ -117,7 +117,7 @@ def main( rank_model, data ):
             #if kind == "one":
             #    print( rate, score )
 
-    kind = "three"
+    kind = "one"
     kernel_data[kind] = np.array( kernel_data[kind] ).reshape( len( kernel_data[kind] ), 1 )
     kde = KernelDensity(kernel='gaussian', bandwidth=0.25).fit( kernel_data[kind] )
 
