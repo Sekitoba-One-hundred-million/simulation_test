@@ -243,7 +243,6 @@ def main( rank_model, data, kernel_data ):
         #sort_result = sorted( sort_result, key=lambda x:x["ex_score"], reverse = True )
         users_sort_result = sorted( sort_result, key=lambda x:x["users_score"], reverse = True )
         rank_sort_result = sorted( sort_result, key=lambda x:x["score"], reverse = True )
-        all_ex_score = 0
         base_horce_num_list = [ sort_result[0]["horce_num"], sort_result[1]["horce_num"] ]
         #base_horce_num_list = [ sort_result[0]["horce_num"] ]
         check_formation_count = [ 3, 2 ]
@@ -279,9 +278,8 @@ def main( rank_model, data, kernel_data ):
                 bet_candidate.append( { "horce_num": [ horce_num_1, horce_num_2 ], \
                                        "rank": [ rank_1, rank_2 ], \
                                        "wide_odds": wide_odds["min"], \
-                                       "bet_count": 5,
+                                       "bet_count": 1,
                                        "ex_score": ex_score_1 + ex_score_2 } )
-                all_ex_score += ( ex_score_2 + ex_score_1 )
                 formation_count += 1
         
         ex_score_list = []
@@ -305,15 +303,17 @@ def main( rank_model, data, kernel_data ):
 
         #print( sum( ex_score_list ) )
         ex_score_key = int( sum( ex_score_list ) )
+        all_ex_score = sum( ex_score_list )
 
         #if 10 < ex_score_key:
         #    continue
 
-        c = 10
-        #c = min( ( have_money * 0.01 ) / 3, 20 )
+        c = 30
+        #c = min( ( have_money * 0.01 ), 50 )
+        #c = have_money * 0.01
         
-        #for i in range( 0, len( bet_candidate ) ):
-        #    bet_candidate[i]["bet_count"] = max( int( c * ( ex_score_list[i] / all_ex_score ) ), 1 )
+        for i in range( 0, len( bet_candidate ) ):
+            bet_candidate[i]["bet_count"] = max( int( c * ( ex_score_list[i] / all_ex_score ) ), 1 )
             #print( bet_candidate[i]["wide_odds"], bet_candidate[i]["bet_count"] )
 
         lib.dic_append( recovery_data, ex_score_key, { "count": 0, "recovery": 0 } )
