@@ -159,6 +159,7 @@ def main( rank_model, data, kernel_data ):
         horce_list = []
         all_score = 0
         min_users_score = 100
+        all_horce_num = len( data[race_id] )
         
         for horce_id in data[race_id].keys():
             if not horce_id in users_score_data[race_id]:
@@ -186,7 +187,7 @@ def main( rank_model, data, kernel_data ):
             min_users_score = min( min_users_score, ex_dict["users_score"] )
             horce_list.append( ex_dict )
 
-        if len( horce_list ) < 5 or len( horce_list ) > 11:
+        if len( horce_list ) < 5 or all_horce_num > 11:
         #if len( horce_list ) < 5:
             continue
 
@@ -207,10 +208,10 @@ def main( rank_model, data, kernel_data ):
 
         #print( "" )
         buy = False
-        bc = 1
+        bet_count = 5
 
-        if len( sort_result ) < 5:
-            continue
+        if all_horce_num < 9:
+            bet_count = 10
 
         all_score = 0
         partern_list = []
@@ -278,7 +279,7 @@ def main( rank_model, data, kernel_data ):
                 bet_candidate.append( { "horce_num": [ horce_num_1, horce_num_2 ], \
                                        "rank": [ rank_1, rank_2 ], \
                                        "wide_odds": wide_odds["min"], \
-                                       "bet_count": 1,
+                                       "bet_count": bet_count,
                                        "ex_score": ex_score_1 + ex_score_2 } )
                 formation_count += 1
         
@@ -312,11 +313,11 @@ def main( rank_model, data, kernel_data ):
         #c = min( ( have_money * 0.01 ), 50 )
         #c = have_money * 0.01
         
-        for i in range( 0, len( bet_candidate ) ):
-            bet_candidate[i]["bet_count"] = max( int( c * ( ex_score_list[i] / all_ex_score ) ), 1 )
+        #for i in range( 0, len( bet_candidate ) ):
+        #    bet_candidate[i]["bet_count"] = max( int( c * ( ex_score_list[i] / all_ex_score ) ), 1 )
             #print( bet_candidate[i]["wide_odds"], bet_candidate[i]["bet_count"] )
 
-        lib.dic_append( recovery_data, ex_score_key, { "count": 0, "recovery": 0 } )
+        lib.dic_append( recovery_data, all_horce_num, { "count": 0, "recovery": 0 } )
         
         for bc in bet_candidate:
             rank_1 = bc["rank"][0]
@@ -327,7 +328,7 @@ def main( rank_model, data, kernel_data ):
             buy = True
             test_result["bet_count"] += bc["bet_count"]
             have_money -= bc["bet_count"]
-            recovery_data[ex_score_key]["count"] += 1
+            recovery_data[all_horce_num]["count"] += bc["bet_count"]
             
             if rank_1 <= 3 and rank_2 <= 3:
                 try:
@@ -338,7 +339,7 @@ def main( rank_model, data, kernel_data ):
                 test_result["win"] += 1
                 test_result["money"] += wide_odds * bc["bet_count"]
                 have_money += wide_odds * bc["bet_count"]
-                recovery_data[ex_score_key]["recovery"] += wide_odds * bc["bet_count"]
+                recovery_data[all_horce_num]["recovery"] += wide_odds * bc["bet_count"]
                 #if wide_odds > 30:
                 #    print( wide_odds )
             
@@ -361,7 +362,7 @@ def main( rank_model, data, kernel_data ):
     key_list = list( recovery_data.keys() )
     key_list = sorted( key_list )
 
-    #for k in key_list:
-    #    count = recovery_data[k]["count"]
-    #    recovery = recovery_data[k]["recovery"] / recovery_data[k]["count"]
-    #    print( "{}: {} {}".format( k, recovery, count ) )
+    for k in key_list:
+        count = recovery_data[k]["count"]
+        recovery = recovery_data[k]["recovery"] / recovery_data[k]["count"]
+        print( "{}: {} {}".format( k, recovery, count ) )
