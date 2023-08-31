@@ -187,7 +187,7 @@ def main( rank_model, data, kernel_data ):
             min_users_score = min( min_users_score, ex_dict["users_score"] )
             horce_list.append( ex_dict )
 
-        if len( horce_list ) < 5 or all_horce_num > 11:
+        if len( horce_list ) < 5 or all_horce_num > 10:
         #if len( horce_list ) < 5:
             continue
 
@@ -208,10 +208,10 @@ def main( rank_model, data, kernel_data ):
 
         #print( "" )
         buy = False
-        bet_count = 5
+        bet_count = 10
 
         if all_horce_num < 9:
-            bet_count = 10
+            bet_count *= 2
 
         all_score = 0
         partern_list = []
@@ -299,12 +299,15 @@ def main( rank_model, data, kernel_data ):
                   bet_candidate[i]["horce_num"][1] in partern["horce_num"]:
                     rate += partern["score"]
 
-            ex_score_list.append( rate * bet_candidate[i]["wide_odds"] )
+            ex_score_list.append( bet_candidate[i]["wide_odds"] )
             #ex_score_list.append( bet_candidate[""])
 
         #print( sum( ex_score_list ) )
-        ex_score_key = int( sum( ex_score_list ) )
+        ex_score_key = int( sum( ex_score_list ) / 5 )
         all_ex_score = sum( ex_score_list )
+
+        #if ex_score_key < 6:
+        #    continue
 
         #if 10 < ex_score_key:
         #    continue
@@ -317,7 +320,9 @@ def main( rank_model, data, kernel_data ):
         #    bet_candidate[i]["bet_count"] = max( int( c * ( ex_score_list[i] / all_ex_score ) ), 1 )
             #print( bet_candidate[i]["wide_odds"], bet_candidate[i]["bet_count"] )
 
-        lib.dic_append( recovery_data, all_horce_num, { "count": 0, "recovery": 0 } )
+        rk = all_horce_num
+        rk = ex_score_key
+        lib.dic_append( recovery_data, rk, { "count": 0, "recovery": 0 } )
         
         for bc in bet_candidate:
             rank_1 = bc["rank"][0]
@@ -328,7 +333,7 @@ def main( rank_model, data, kernel_data ):
             buy = True
             test_result["bet_count"] += bc["bet_count"]
             have_money -= bc["bet_count"]
-            recovery_data[all_horce_num]["count"] += bc["bet_count"]
+            recovery_data[rk]["count"] += bc["bet_count"]
             
             if rank_1 <= 3 and rank_2 <= 3:
                 try:
@@ -339,13 +344,14 @@ def main( rank_model, data, kernel_data ):
                 test_result["win"] += 1
                 test_result["money"] += wide_odds * bc["bet_count"]
                 have_money += wide_odds * bc["bet_count"]
-                recovery_data[all_horce_num]["recovery"] += wide_odds * bc["bet_count"]
+                recovery_data[rk]["recovery"] += wide_odds * bc["bet_count"]
                 #if wide_odds > 30:
                 #    print( wide_odds )
             
         if buy:
             test_result["count"] += 1
             move_money_list.append( have_money )
+
 
     recovery_rate = ( test_result["money"] / test_result["bet_count"] ) * 100
     win_rate = ( test_result["win"] / test_result["count"] ) * 100
