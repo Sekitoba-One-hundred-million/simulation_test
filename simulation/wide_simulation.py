@@ -261,14 +261,11 @@ def main( rank_model, data, kernel_data ):
                 rank_2 = users_sort_result[r]["rank"]
                 horce_num_2 = users_sort_result[r]["horce_num"]
 
-                if horce_num_2 in base_horce_num_list:
+                if horce_num_1 == horce_num_2:
                     continue
 
                 users_score = users_sort_result[r]["users_score"]
 
-                #if users_score < 6:
-                #    continue
-                
                 ex_score_2 = users_sort_result[r]["ex_score"]
                 wide_odds = wide_odds_get( horce_num_1, horce_num_2 )
 
@@ -368,7 +365,7 @@ def main( rank_model, data, kernel_data ):
     key_list = list( recovery_data.keys() )
     key_list = sorted( key_list )
 
-    for k in key_list:
-        count = recovery_data[k]["count"]
-        recovery = recovery_data[k]["recovery"] / recovery_data[k]["count"]
-        print( "{}: {} {}".format( k, recovery, count ) )
+    #for k in key_list:
+    #    count = recovery_data[k]["count"]
+    #    recovery = recovery_data[k]["recovery"] / recovery_data[k]["count"]
+    #    print( "{}: {} {}".format( k, recovery, count ) )
