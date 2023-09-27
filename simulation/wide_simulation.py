@@ -126,6 +126,8 @@ def candiate_create( horce_data, partern_list ):
 
 def main( rank_model, data, kernel_data ):
     have_money = 3000
+    check_money = 3000
+    max_have_money = have_money
     move_money_list = []
     recovery_data = {}
     test_result = { "count": 0, "bet_count": 0, "money": 0, "win": 0 }
@@ -155,7 +157,8 @@ def main( rank_model, data, kernel_data ):
 
         if not race_id in users_score_data:
             continue
-        
+
+        max_have_money = max( have_money, max_have_money )
         horce_list = []
         all_score = 0
         min_users_score = 100
@@ -198,54 +201,18 @@ def main( rank_model, data, kernel_data ):
         if all_score == 0:
             continue
 
-        #min_users_score -= 1
-        for i in range( 0, len( sort_result ) ):
-            #sort_result[i]["users_score"] -= min_users_score
-            sort_result[i]["ex_score"] = sort_result[i]["score"]# * sort_result[i]["users_score"]
-            
-        #for i in range( 0, len( sort_result ) ):
-        #    print( sort_result[i]["ex_score"], sort_result[i]["score"], sort_result[i]["users_score"] )
-
-        #print( "" )
         buy = False
-        bet_count = 10
+        bet_count = int( max_have_money / check_money ) * 10
 
         if all_horce_num < 9:
             bet_count *= 2
 
-        all_score = 0
-        partern_list = []
-
-        for i in range( 0, len( sort_result ) ):
-            score_1 = sort_result[i]["score"]
-            rank_1 = sort_result[i]["rank"]
-            horce_num_1 = sort_result[i]["horce_num"]
-
-            for r in range( i + 1, len( sort_result ) ):
-                score_2 = sort_result[r]["score"]
-                rank_2 = sort_result[r]["rank"]
-                horce_num_2 = sort_result[r]["horce_num"]
-
-                for t in range( r + 1, len( sort_result ) ):
-                    score_3 = sort_result[t]["score"]
-                    score_3 = math.exp( kernel_data["model"].score_samples( np.array( [ [ score_3 ] ] ) )[0] )
-                    horce_num_3 = sort_result[t]["horce_num"]
-                    partern_list.append( { "horce_num": [ horce_num_1, horce_num_2, horce_num_3 ], \
-                                        "score": score_1 * score_2 * score_3 } )                    
-                    all_score += score_1 * score_2 * score_3
-                    instance_score = 1                    
-
-        for i in range( 0, len( partern_list ) ):
-            partern_list[i]["score"] /= all_score
-
         odds_list = []
         bet_candidate = []
         sum_odds = 0
-        #sort_result = sorted( sort_result, key=lambda x:x["ex_score"], reverse = True )
         users_sort_result = sorted( sort_result, key=lambda x:x["users_score"], reverse = True )
         rank_sort_result = sorted( sort_result, key=lambda x:x["score"], reverse = True )
         base_horce_num_list = [ sort_result[0]["horce_num"], sort_result[1]["horce_num"] ]
-        #base_horce_num_list = [ sort_result[0]["horce_num"] ]
         check_formation_count = [ 3, 2 ]
         
         for i in range( 0, len( check_formation_count ) ):
@@ -261,7 +228,7 @@ def main( rank_model, data, kernel_data ):
                 rank_2 = users_sort_result[r]["rank"]
                 horce_num_2 = users_sort_result[r]["horce_num"]
 
-                if horce_num_1 == horce_num_2:
+                if horce_num_2 in base_horce_num_list:
                     continue
 
                 users_score = users_sort_result[r]["users_score"]
@@ -284,42 +251,6 @@ def main( rank_model, data, kernel_data ):
 
         if len( bet_candidate ) < 0:
             continue
-
-        #if 20 < all_ex_score and all_ex_score < 60:
-        #    continue
-
-        for i in range( 0, len( bet_candidate ) ):
-            rate = 0
-
-            for partern in partern_list:
-                if bet_candidate[i]["horce_num"][0] in partern["horce_num"] and \
-                  bet_candidate[i]["horce_num"][1] in partern["horce_num"]:
-                    rate += partern["score"]
-
-            ex_score_list.append( bet_candidate[i]["wide_odds"] )
-            #ex_score_list.append( bet_candidate[""])
-
-        #print( sum( ex_score_list ) )
-        ex_score_key = int( sum( ex_score_list ) / 5 )
-        all_ex_score = sum( ex_score_list )
-
-        #if ex_score_key < 6:
-        #    continue
-
-        #if 10 < ex_score_key:
-        #    continue
-
-        c = 30
-        #c = min( ( have_money * 0.01 ), 50 )
-        #c = have_money * 0.01
-        
-        #for i in range( 0, len( bet_candidate ) ):
-        #    bet_candidate[i]["bet_count"] = max( int( c * ( ex_score_list[i] / all_ex_score ) ), 1 )
-            #print( bet_candidate[i]["wide_odds"], bet_candidate[i]["bet_count"] )
-
-        rk = all_horce_num
-        rk = ex_score_key
-        lib.dic_append( recovery_data, rk, { "count": 0, "recovery": 0 } )
         
         for bc in bet_candidate:
             rank_1 = bc["rank"][0]
@@ -330,7 +261,6 @@ def main( rank_model, data, kernel_data ):
             buy = True
             test_result["bet_count"] += bc["bet_count"]
             have_money -= bc["bet_count"]
-            recovery_data[rk]["count"] += bc["bet_count"]
             
             if rank_1 <= 3 and rank_2 <= 3:
                 try:
@@ -341,9 +271,6 @@ def main( rank_model, data, kernel_data ):
                 test_result["win"] += 1
                 test_result["money"] += wide_odds * bc["bet_count"]
                 have_money += wide_odds * bc["bet_count"]
-                recovery_data[rk]["recovery"] += wide_odds * bc["bet_count"]
-                #if wide_odds > 30:
-                #    print( wide_odds )
             
         if buy:
             test_result["count"] += 1
@@ -358,14 +285,8 @@ def main( rank_model, data, kernel_data ):
     print( "ワイド 勝率{}%".format( win_rate ) )
     print( "賭けた回数{}回".format( test_result["bet_count"] ) )
     print( "賭けたレース数{}回".format( test_result["count"] ) )
+    print( "獲得金額{}円".format( int( have_money ) ) )
 
-    print( min( move_money_list ) )
+    print( min( move_money_list ) )    
     plt.plot( list( range( 0, len( move_money_list ) ) ), move_money_list )
     plt.savefig( "/Volumes/Gilgamesh/move_money.png" )
-    key_list = list( recovery_data.keys() )
-    key_list = sorted( key_list )
-
-    #for k in key_list:
-    #    count = recovery_data[k]["count"]
-    #    recovery = recovery_data[k]["recovery"] / recovery_data[k]["count"]
-    #    print( "{}: {} {}".format( k, recovery, count ) )
