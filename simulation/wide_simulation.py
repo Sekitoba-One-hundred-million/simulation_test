@@ -8,123 +8,105 @@ import matplotlib.pyplot as plt
 import sekitoba_library as lib
 import sekitoba_data_manage as dm
 
-def best_index_get( partern_list, bet_candidate ):
-    score = -10000000
-    index = -1
-
-    for i in range( 0, len( bet_candidate ) ):
-        rate = 0
-        score_list = { "+": [], "-": [] }
-        bet_candidate[i]["bet_count"] += 1
-
-        for partern in partern_list:
-            current_score = 0
-            
-            for bc in bet_candidate:                
-                wide_odds = bc["wide_odds"]
-                rate_score = partern["score"]
-
-                if bc["horce_num"][0] in partern["horce_num"] and \
-                  bc["horce_num"][1] in partern["horce_num"]:
-                    current_score += bc["bet_count"] * rate_score * wide_odds
-                else:
-                    current_score -= math.pow( bc["bet_count"], 1.2 ) * rate_score
-
-            if current_score == 0:
-                continue
-            elif current_score < 0:
-                score_list["-"].append( current_score )
-            else:
-                score_list["+"].append( current_score )
-            
-        sum_len = len( score_list["+"] ) + len( score_list["-"] )
-        plus_rate = math.pow( len( score_list["+"] ) / sum_len, 2 )
-        minus_rate = math.pow( len( score_list["-"] ) / sum_len, 2 )
-        instance_score = sum( score_list["+"] ) * plus_rate + sum( score_list["-"] ) * minus_rate
-        #print( i, instance_score )
-
-        if score < instance_score:
-            index = i
-            score = instance_score
-
-        bet_candidate[i]["bet_count"] -= 1
-
-    #print( "" )
-    return index, score
-
-def bet_best_get( partern_list, bet_candidate ):
-    all_score = 0
+def bet_select( horce_list, baren_odds_data, wide_odds_data ):
+    bet_patern_list = []
+    rank_patern_list = []
     
-    for i in range( 0, len( bet_candidate ) ):
-        current_score = 0
-        horce_num_1 = bet_candidate[i]["horce_num"][0]
-        horce_num_2 = bet_candidate[i]["horce_num"][1]
-        wide_odds = bet_candidate[i]["wide_odds"]
+    for i in range( 0, len( horce_list ) ):
+        score1 = horce_list[i]["score"]
+        rank1 = horce_list[i]["rank"]
+        users_score1 = horce_list[i]["users_score"]
+        horce_num1 = horce_list[i]["horce_num"]
         
-        for partern in partern_list:
-            rate_score = partern["score"]
+        for r in range( 0, len( horce_list ) ):
+            score2 = horce_list[r]["score"]
+            rank2 = horce_list[r]["rank"]
+            users_score2 = horce_list[r]["users_score"]
+            horce_num2 = horce_list[r]["horce_num"]
 
-            if horce_num_1 in partern["horce_num"] and \
-              horce_num_2 in partern["horce_num"]:
-                current_score += rate_score * wide_odds
-            else:
-                current_score -= rate_score
-
-        bet_candidate[i]["ex_score"] = math.exp( current_score )
-        all_score += math.exp( current_score )
-
-    if all_score == 0:
-        return None, None
-    
-    bet_candidate = sorted( bet_candidate, key = lambda x:x["ex_score"], reverse = True )
-    
-    bt = 30
-    score = 0
-    
-    for i in range( 0, len( bet_candidate ) ):
-        bet_candidate[i]["ex_score"] /= all_score
-        bet_candidate[i]["bet_count"] = int( bt * bet_candidate[i]["ex_score"] )
-        score += bet_candidate[i]["ex_score"] * bet_candidate[i]["wide_odds"]
-
-    return bet_candidate, score
-
-def candiate_create( horce_data, partern_list ):
-    bet_candidate_list = []
-    all_bet_patern = {}
-    sum_odds = 0
-    sort_result = sorted( horce_data, key = lambda x:x["horce_num"] )
-
-    # ワイドの全てのパターン
-    for i in range( 0, len( sort_result ) ):
-        rank_1 = sort_result[i]["rank"]
-        horce_num_1 = sort_result[i]["horce_num"]
-        all_patern[horce_num_1] = {}
-
-        for r in range( i + 1, len( sort_result ) ):
-            rank_2 = sort_result[r]["rank"]
-            horce_num_2 = sort_result[r]["horce_num"]
-            wide_odds = wide_odds_get( horce_num_1, horce_num_2 )
-            
-            if len( wide_odds ) == 0:
+            if i == r:
                 continue
 
-            all_bet_patern[horce_num_1][horce_num_2] = { "horce_num": [ horce_num_1, horce_num_2 ], \
-                                                        "rank": [ rank_1, rank_2 ], \
-                                                        "wide_odds": wide_odds["min"], \
-                                                        "bet_count": 0 }
-
-    # 対象のワイドが起きる確率を算出
-    for horce_num_1 in all_bet_patern.keys():
-        for horce_num_2 in all_bet_patern[horce_num_1].keys():
-            all_bet_patern[horce_num_1][horce_num_2]["rate"] = 0
-                        
-            for partern in partern_list:
-                if horce_num_1 in partern["horce_num"] and \
-                  horce_num_2 in partern["horce_num"]:
-                    all_bet_patern[horce_num_1][horce_num_2]["rate"] += partern["score"]
+            for t in range( 0, len( horce_list ) ):
+                horce_num3 = horce_list[t]["horce_num"]
                 
+                if i == t or r == t:
+                    continue
 
-def main( rank_model, data, kernel_data ):
+                rank_patern_list.append( [ horce_num1, horce_num2, horce_num3 ] )
+
+            if r <= i:
+                continue
+            
+            min_horce_num = int( min( horce_num1, horce_num2 ) )
+            max_horce_num = int( max( horce_num1, horce_num2 ) )
+            wide_odds = -1
+            baren_odds = -1
+            
+            try:
+                baren_odds = baren_odds_data[min_horce_num][max_horce_num]
+                wide_odds = wide_odds_data[min_horce_num][max_horce_num]["min"]
+            except:
+                continue
+
+            bet_patern_list.append( { "kind": "wide",
+                                     "bet_count": 0,
+                                     "score": ( score1, score2 ),
+                                     "rank": ( rank1, rank2 ),
+                                     "users_score": ( users_score1, users_score2 ),
+                                     "horce_num": ( min_horce_num, max_horce_num ),
+                                     "odds": wide_odds } )
+
+            bet_patern_list.append( { "kind": "baren",
+                                     "bet_count": 0,
+                                     "score": ( score1, score2 ),
+                                     "rank": ( rank1, rank2 ),
+                                     "users_score": ( users_score1, users_score2 ),
+                                     "horce_num": ( min_horce_num, max_horce_num ),
+                                     "odds": baren_odds } )
+
+    bet_count = 30
+    
+    for count in range( 0, bet_count ):
+        best_score = -100000
+        best_index = -1
+        
+        for i in range( 0, len( bet_patern_list ) ):
+            score = 0
+            bet_patern_list[i]["bet_count"] += 1
+
+            for rank_patern in rank_patern_list:
+                check_rank = -1
+                
+                if bet_patern_list[i]["kind"] == "wide":
+                    check_rank = 3
+                elif bet_patern_list[i]["kind"] == "baren":
+                    check_rank = 2
+
+                instance_score = 0
+                
+                if bet_patern_list[i]["horce_num"][0] in rank_patern[0:check_rank] and \
+                  bet_patern_list[i]["horce_num"][1] in rank_patern[0:check_rank]:
+                    instance_score += ( bet_patern_list[i]["score"][0] + bet_patern_list[i]["score"][1] ) * bet_patern_list[i]["odds"]
+                    instance_score *= bet_patern_list[i]["bet_count"]
+                    instance_score *= math.pow( 0.6, bet_patern_list[i]["bet_count"] )
+                else:
+                    instance_score -= ( bet_patern_list[i]["score"][0] + bet_patern_list[i]["score"][1] ) * bet_patern_list[i]["bet_count"]
+
+                score += instance_score
+
+            if best_score < score:
+                best_index = i
+                best_score = score
+
+            bet_patern_list[i]["bet_count"] -= 1
+
+        bet_patern_list[best_index]["bet_count"] += 1
+        #print( bet_patern_list[best_index] )
+
+    return bet_patern_list
+
+def main( rank_model, data ):
     have_money = 3000
     check_money = 3000
     max_have_money = have_money
@@ -132,6 +114,7 @@ def main( rank_model, data, kernel_data ):
     recovery_data = {}
     test_result = { "count": 0, "bet_count": 0, "money": 0, "win": 0 }
     popular_kind_win_rate_data = dm.pickle_load( "popular_kind_win_rate_data.pickle" )
+    baren_odds_data = dm.pickle_load( "baren_odds_data.pickle" )
     wide_odds_data = dm.pickle_load( "wide_odds_data.pickle" )
     odds_data = dm.pickle_load( "odds_data.pickle" )
     users_score_data = dm.pickle_load( "users_score_data.pickle" )
@@ -162,6 +145,7 @@ def main( rank_model, data, kernel_data ):
         horce_list = []
         all_score = 0
         min_users_score = 100
+        min_rank_score = 100
         all_horce_num = len( data[race_id] )
         
         for horce_id in data[race_id].keys():
@@ -172,15 +156,13 @@ def main( rank_model, data, kernel_data ):
             ex_dict = {}
             p_data = rank_model.predict( np.array( [ data[race_id][horce_id]["data"] ] ) )
             score = p_data[0]
-            score = kernel_data["model"].score_samples( np.array( [ [ p_data[0] - kernel_data["max_score"] ] ] ) )[0]
             all_score += score
-            ex_dict["score"] = math.exp( score )
+            ex_dict["score"] = score
             ex_dict["users_score"] = 0
             ex_dict["rank"] = data[race_id][horce_id]["answer"]["rank"]
             ex_dict["odds"] = data[race_id][horce_id]["answer"]["odds"]
             ex_dict["popular"] = data[race_id][horce_id]["answer"]["popular"]
             ex_dict["horce_num"] = data[race_id][horce_id]["answer"]["horce_num"]
-            #ex_dict["win_rate"] = data[race_id][horce_id]["answer"]["popular_win_rate"]
             ex_dict["horce_id"] = horce_id
             ex_dict["ex_score"] = 0
 
@@ -188,101 +170,95 @@ def main( rank_model, data, kernel_data ):
                 ex_dict["users_score"] += users_score_data[race_id][horce_id][k]
 
             min_users_score = min( min_users_score, ex_dict["users_score"] )
+            min_rank_score = min( min_rank_score, ex_dict["score"] )
             horce_list.append( ex_dict )
 
-        if len( horce_list ) < 5 or all_horce_num > 10:
-        #if len( horce_list ) < 5:
+        if len( horce_list ) < 6: #or all_horce_num > 8:
             continue
 
-        sort_result = sorted( horce_list, key=lambda x:x["score"], reverse = True )
         score_rate = 1
         popular_rate = 0.1
 
         if all_score == 0:
             continue
 
+        all_score -= len( horce_list ) * min_rank_score
+
+        for horce_data in horce_list:
+            horce_data["score"] -= min_rank_score
+            horce_data["score"] /= all_score
+
+        pattern_list = []
+
+        for i in range( 0, len( horce_list ) ):
+            for r in range( i + 1, len( horce_list ) ):
+                for t in range( r + 1, len( horce_list ) ):
+                    pattern_list.append( [ i, r, t ] )
+
         buy = False
-        bet_count = int( max_have_money / check_money ) * 10
-
-        if all_horce_num < 9:
-            bet_count *= 2
-
-        odds_list = []
-        bet_candidate = []
-        sum_odds = 0
-        users_sort_result = sorted( sort_result, key=lambda x:x["users_score"], reverse = True )
-        rank_sort_result = sorted( sort_result, key=lambda x:x["score"], reverse = True )
-        base_horce_num_list = [ sort_result[0]["horce_num"], sort_result[1]["horce_num"] ]
-        check_formation_count = [ 3, 2 ]
-        
-        for i in range( 0, len( check_formation_count ) ):
-            rank_1 = sort_result[i]["rank"]
-            horce_num_1 = sort_result[i]["horce_num"]
-            ex_score_1 = sort_result[i]["ex_score"]
-            formation_count = 0
-
-            for r in range( 0, len( users_sort_result ) ):
-                if formation_count == check_formation_count[i]:
-                    break
-                
-                rank_2 = users_sort_result[r]["rank"]
-                horce_num_2 = users_sort_result[r]["horce_num"]
-
-                if horce_num_2 in base_horce_num_list:
-                    continue
-
-                users_score = users_sort_result[r]["users_score"]
-
-                ex_score_2 = users_sort_result[r]["ex_score"]
-                wide_odds = wide_odds_get( horce_num_1, horce_num_2 )
-
-                if len( wide_odds ) == 0:
-                    continue
-
-                sum_odds += wide_odds["min"]
-                bet_candidate.append( { "horce_num": [ horce_num_1, horce_num_2 ], \
-                                       "rank": [ rank_1, rank_2 ], \
-                                       "wide_odds": wide_odds["min"], \
-                                       "bet_count": bet_count,
-                                       "ex_score": ex_score_1 + ex_score_2 } )
-                formation_count += 1
-        
-        ex_score_list = []
-
-        if len( bet_candidate ) < 0:
-            continue
+        bet_count = 1#int( max_have_money / check_money ) * 10
+        #if all_horce_num < 9:
+        #    bet_count *= 2
+        bet_candidate = bet_select( horce_list, baren_odds_data[race_id], wide_odds_data[race_id] )
+        #users_sort_result = sorted( horce_list, key=lambda x:x["users_score"], reverse = True )
+        #rank_sort_result = sorted( horce_list, key=lambda x:x["score"], reverse = True )
+        #base_horce_num_list = [ rank_sort_result[0]["horce_num"], rank_sort_result[1]["horce_num"] ]
+        #base_horce_num_list = [ rank_sort_result[0]["horce_num"] ]
+        #check_formation_count = [ 2, 1 ]
+        #check_formation_count = [ 1 ]
         
         for bc in bet_candidate:
+            if bc["bet_count"] == 0:
+                continue
+
+            kind = bc["kind"]
             rank_1 = bc["rank"][0]
             rank_2 = bc["rank"][1]
             horce_num_1 = bc["horce_num"][0]
             horce_num_2 = bc["horce_num"][1]
                 
             buy = True
+
             test_result["bet_count"] += bc["bet_count"]
             have_money -= bc["bet_count"]
-            
-            if rank_1 <= 3 and rank_2 <= 3:
-                try:
-                    wide_odds = odds_data[race_id]["ワイド"][int(rank_1+rank_2-3)] / 100
-                except:
-                    continue
-                    
-                test_result["win"] += 1
-                test_result["money"] += wide_odds * bc["bet_count"]
-                have_money += wide_odds * bc["bet_count"]
+            #lib.dic_append( recovery_data, rk, { "recovery": 0, "count": 0 } )
+            #recovery_data[rk]["count"] += bc["bet_count"] 
+
+            if kind ==  "wide":
+                if rank_1 <= 3 and rank_2 <= 3:
+                    try:
+                        wide_odds = odds_data[race_id]["ワイド"][int(rank_1+rank_2-3)] / 100
+                    except:
+                        continue
+
+                    test_result["win"] += 1
+                    test_result["money"] += wide_odds * bc["bet_count"]
+                    have_money += wide_odds * bc["bet_count"]
+                    print( "wide", wide_odds, bc["bet_count"] )
+            elif kind == "baren":
+                if rank_1 <= 3 and rank_2 <= 3:
+                    try:
+                        baren_odds = odds_data[race_id]["馬連"] / 100
+                    except:
+                        continue
+
+                    test_result["win"] += 1
+                    test_result["money"] += baren_odds * bc["bet_count"]
+                    have_money += baren_odds * bc["bet_count"]
+                    print( "baren", baren_odds, bc["bet_count"] )
             
         if buy:
             test_result["count"] += 1
             move_money_list.append( have_money )
 
+        print( have_money, ( test_result["money"] / test_result["bet_count"] ) * 100 )
 
     recovery_rate = ( test_result["money"] / test_result["bet_count"] ) * 100
     win_rate = ( test_result["win"] / test_result["count"] ) * 100
     
     print( "" )
-    print( "ワイド 回収率{}%".format( recovery_rate ) )
-    print( "ワイド 勝率{}%".format( win_rate ) )
+    print( "回収率{}%".format( recovery_rate ) )
+    print( "勝率{}%".format( win_rate ) )
     print( "賭けた回数{}回".format( test_result["bet_count"] ) )
     print( "賭けたレース数{}回".format( test_result["count"] ) )
     print( "獲得金額{}円".format( int( have_money ) ) )
@@ -290,3 +266,9 @@ def main( rank_model, data, kernel_data ):
     print( min( move_money_list ) )    
     plt.plot( list( range( 0, len( move_money_list ) ) ), move_money_list )
     plt.savefig( "/Volumes/Gilgamesh/move_money.png" )
+
+    #key_list = sorted( list( recovery_data.keys() ) )
+
+    #for k in key_list:
+    #    recovery = recovery_data[k]["recovery"] / recovery_data[k]["count"]
+    #    print( k, recovery, recovery_data[k]["count"] )
