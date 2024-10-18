@@ -1,16 +1,19 @@
 def main():
-    import sekitoba_data_manage as dm
-    #from simulation import buy_simulation
-    #from simulation import test
-    #from kernel import kernel
-    from simulation import wide_simulation
-    rank_model = dm.pickle_load( "rank_model.pickle" )
-    data = dm.pickle_load( "rank_simu_data.pickle" )
+    #from argparse import ArgumentParser
+    #import matplotlib.pyplot as plt
+    #import numpy as np
+    #from mpi4py import MPI
+    #from tqdm import tqdm
 
-    #kernel_data = kernel.main( rank_model, data )
-    #test.main( rank_model, data, kernel_data )
-    #buy_simulation.main()
-    wide_simulation.main( rank_model, data )
+    #import SekitobaDataManage as dm
+    #import SekitobaLibrary as lib
+    #from simulation import buy_simulation
+    #from simulation import recovery_simulation
+    from simulation import simulation_test
+
+    lib.name.set_name( "rank" )
+    lib.log.set_write( False )
+    simulation_test.main()
 
 if __name__ == "__main__":
     main()
