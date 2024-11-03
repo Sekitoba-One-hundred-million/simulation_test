@@ -6,7 +6,7 @@ def main():
     #from tqdm import tqdm
 
     #import SekitobaDataManage as dm
-    #import SekitobaLibrary as lib
+    import SekitobaLibrary as lib
     #from simulation import buy_simulation
     #from simulation import recovery_simulation
     from simulation import simulation_test
