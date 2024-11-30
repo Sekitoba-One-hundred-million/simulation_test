@@ -6,26 +6,28 @@ import SekitobaLibrary as lib
 import SekitobaDataManage as dm
 
 WIDE = "wide"
+TRIPLET = "triplet"
 ONE = "one"
 
 class SelectHorce:
-    def __init__( self, wide_odds_data, horce_data ):
-        self.use_count = 10
-        self.bet_rate = 1
-        self.goal_rate = 2
+    def __init__( self, wide_odds_data, triplet_odds_data, horce_data ):
+        self.allBetCount = 30
+        self.purpose = 3
         self.bet_result_count = 0
+        self.betCount = 0
         self.wide_odds_data = wide_odds_data
+        self.triplet_odds_data = triplet_odds_data
         self.horce_data = horce_data
         self.select_horce_list = []
 
     def create_rate( self ):
         rate_data = []
         all_rate = 0
-        
+
         for i in range( 0, len( self.horce_data ) ):
             score_1 = self.horce_data[i]["score"]
             horce_num_1 = self.horce_data[i]["horce_num"]
-            
+
             for r in range( i + 1, len( self.horce_data ) ):
                 score_2 = self.horce_data[r]["score"]
                 horce_num_2 = self.horce_data[r]["horce_num"]
@@ -47,60 +49,163 @@ class SelectHorce:
 
     def create_candidate( self ):
         candidate = []
+        horceNumList = []
+
+        for horce in self.horce_data:
+            horceNumList.append( horce["horce_num"] )
 
         for horce_num_1 in self.wide_odds_data.keys():
+            if not horce_num_1 in horceNumList:
+                continue
+            
             for horce_num_2 in self.wide_odds_data[horce_num_1].keys():
-                horce_num_list = [ horce_num_1, horce_num_2 ]
-                candidate.append( { "horce_num_list": horce_num_list, \
-                                   "odds": self.wide_odds_data[horce_num_1][horce_num_2]["min"], \
-                                   "kind": "wide",
-                                   "use": False } )
+                if not horce_num_2 in horceNumList:
+                    continue
 
+                candidate.append(
+                    { "horce_num_list": [ horce_num_1, horce_num_2 ], \
+                      "odds": self.wide_odds_data[horce_num_1][horce_num_2]["min"], \
+                      "kind": "wide",
+                      "use": False,
+                      "index": len( candidate ) } )
+
+        for horce_num_1 in self.triplet_odds_data.keys():
+            if not horce_num_1 in horceNumList:
+                continue
+            
+            for horce_num_2 in self.triplet_odds_data[horce_num_1].keys():
+                if not horce_num_2 in horceNumList:
+                    continue
+
+            for horce_num_3 in self.triplet_odds_data[horce_num_1][horce_num_2].keys():
+                if not horce_num_3 in horceNumList:
+                    continue
+
+                candidate.append(
+                    { "horce_num_list": [ horce_num_1, horce_num_2, horce_num_3 ], \
+                      "odds": self.triplet_odds_data[horce_num_1][horce_num_2][horce_num_3], \
+                      "kind": "triplet",
+                      "use": False,
+                      "index": len( candidate ) } )
+
+                
         return candidate
 
-    def create_score( self, bet_list ):
-        score = 0
+    def createBetCount( self, odds ):
+        return max( int( ( self.allBetCount * self.purpose ) / odds ), 1 )
 
-        for rd in self.rate_data:
-            for bet in bet_list:
-                if bet["horce_num_list"][0] in rd["horce_num_list"] \
-                  and bet["horce_num_list"][1] in rd["horce_num_list"]:
-                    score += math.pow( rd["rate"], 2.2 ) * math.pow( bet["odds"], 0.6 )
+    def checkBetHorce( self, candiateList, rateDataList ):
+        result = {}
+        maxScore = -10000
+        c = 0
 
-        return score
+        for candiate in candiateList:
+            if candiate["use"]:
+                continue
 
+            odds = candiate["odds"]
+            betCount = self.createBetCount( odds )
+
+            #if self.allBetCount < betCount + self.betCount:
+            #    continue
+
+            candiateRate = 0
+
+            for rateData in rateDataList:
+                if rateData["use"]:
+                    continue
+
+                rate = rateData["rate"]
+                
+                for horceNum in candiate["horce_num_list"]:
+                    if not horceNum in rateData["horce_num_list"]:
+                        rate = 0
+                        break
+
+                candiateRate += rate
+                
+            candiate["rate"] = candiateRate
+            betRisk = math.pow( betCount, 1.5 )
+            score = ( candiateRate / betRisk ) * math.pow( odds, 1 )
+            candiate["score"] = score
+
+            if maxScore < score:
+                maxScore = score
+                result = copy.deepcopy( candiate )
+
+        return result, maxScore
+        
     def selectHorce( self ):
-        rateData = self.create_rate()
-        candiateList = self.create_candidate()        
+        result = []
+        currentBetCount = 0
+        allScore = 0
+        allRate = 0
+        rateDataList = self.create_rate()
+        candiateList = self.create_candidate()
+        
+        while 1:
+            if self.allBetCount <= self.betCount:
+                break
+            
+            betHorce, bestScore = self.checkBetHorce( candiateList, rateDataList )
+
+            if len( betHorce ) == 0:
+                break
+            
+            candiateList[betHorce["index"]]["use"] = True
+            betHorce["count"] = self.createBetCount( betHorce["odds"] )
+            allScore += bestScore
+
+            #if self.allBetCount < self.betCount + betHorce["count"]:
+            #    break
+            
+            self.betCount += betHorce["count"]
+            allRate += betHorce["rate"]
+            result.append( betHorce )
+
+            for i in range( 0, len( rateDataList ) ):
+                if rateDataList[i]["use"]:
+                    continue
+                
+                use = True
+
+                for horceNum in betHorce["horce_num_list"]:
+                    if not horceNum in rateDataList[i]["horce_num_list"]:
+                        use = False
+                        break
+
+                if use:
+                    rateDataList[i]["use"] = use
+
+        return result, allScore
 
     def bet_check( self, bet_list, current_odds ):
         get_money = 0
+        oddsList = []
 
         for bet in bet_list:
             rank = 0
             check = True
 
             for hd in self.horce_data:
-                if bet["kind"] == WIDE and hd["horce_num"] in bet["horce_num_list"]:
+                if not hd["horce_num"] in bet["horce_num_list"]:
+                    continue
+                
+                if bet["kind"] == WIDE or bet["kind"] == TRIPLET:
                     if hd["rank"] > 3:
                         check = False
                         break
                     else:
                         rank += hd["rank"]
-                elif bet["kind"] == ONE and hd["horce_num"] in bet["horce_num_list"]:
-                    if not hd["rank"] == 1:
-                        check = False
-                        break
-                    else:
-                        rank = hd["rank"]
 
             if check:
                 if bet["kind"] == WIDE:
                     try:
                         get_money += ( current_odds["ワイド"][int(rank-3)] / 100 ) * bet["count"]
+                        oddsList.append( [ current_odds["ワイド"][int(rank-3)] / 100, bet["horce_num_list"] ] )
                     except:
                         pass
-                elif bet["kind"] == ONE:
+                elif bet["kind"] == TRIPLET:
                     get_money += bet["odds"] * bet["count"]
 
-        return get_money
+        return get_money, oddsList
