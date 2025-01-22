@@ -11,8 +11,8 @@ ONE = "one"
 
 class SelectHorce:
     def __init__( self, wide_odds_data, triplet_odds_data, horce_data ):
-        self.allBetCount = 30
-        self.purpose = 3
+        self.allBetCount = 10
+        self.purpose = 1.5
         self.bet_result_count = 0
         self.betCount = 0
         self.wide_odds_data = wide_odds_data
@@ -87,7 +87,6 @@ class SelectHorce:
                       "kind": "triplet",
                       "use": False,
                       "index": len( candidate ) } )
-
                 
         return candidate
 
@@ -96,8 +95,12 @@ class SelectHorce:
 
     def checkBetHorce( self, candiateList, rateDataList ):
         result = {}
+        alreadyBetList = []
         maxScore = -10000
-        c = 0
+
+        for candiate in candiateList:
+            if candiate["use"]:
+                alreadyBetList.append( candiate )
 
         for candiate in candiateList:
             if candiate["use"]:
@@ -106,8 +109,8 @@ class SelectHorce:
             odds = candiate["odds"]
             betCount = self.createBetCount( odds )
 
-            #if self.allBetCount < betCount + self.betCount:
-            #    continue
+            if self.allBetCount < betCount + self.betCount:
+                continue
 
             candiateRate = 0
 
@@ -125,8 +128,22 @@ class SelectHorce:
                 candiateRate += rate
                 
             candiate["rate"] = candiateRate
-            betRisk = math.pow( betCount, 1.5 )
+            betRisk = math.pow( betCount, 1 )
             score = ( candiateRate / betRisk ) * math.pow( odds, 1 )
+            sr = 1
+
+            for alreadyBet in alreadyBetList:
+                c = 0
+
+                for horceNum in candiate["horce_num_list"]:
+                    if horceNum in alreadyBet["horce_num_list"]:
+                        c += 1
+
+                if len( alreadyBet["horce_num_list"] ) - 1 == c:
+                    sr = 2
+                    break
+
+            score *= sr
             candiate["score"] = score
 
             if maxScore < score:
@@ -175,7 +192,8 @@ class SelectHorce:
                         break
 
                 if use:
-                    rateDataList[i]["use"] = use
+                    #rateDataList[i]["use"] = use
+                    rateDataList[i]["rate"] *= 0.5
 
         return result, allScore
 
