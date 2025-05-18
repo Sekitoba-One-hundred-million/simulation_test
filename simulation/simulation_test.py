@@ -57,17 +57,19 @@ def score_add( score_data ):
 def main( test_years = lib.simu_years, show = True ):
     data = dm.pickle_load( lib.name.simu_name() )
     model_list = dm.pickle_load( lib.name.model_name() )
-    index_data = [ [ 3, 5 ], [ 6, 7, 8 ] ]
+    index_data = [ [ 3, 4, 5 ], [ 7, 8 ] ]
     moneyList = []
     recovery_rate = 0
     raceCount = 0
     count = 0
     win_rate = 0
     money = 1000
-    bet_money = 15#int( money / 200 )
+    bet_money = 20#int( money / 200 )
     #t = 1
     t = len( index_data )
 
+    recovery_cluster_data = dm.pickle_load( "recovery_cluster_data.pickle" )
+    recovery_simu_data = dm.pickle_load( "recovery_simu_data.pickle" )
     wide_odds_data = dm.pickle_load( "wide_odds_data.pickle" )
     #triplet_odds_data = dm.pickle_load( "triplet_odds_data.pickle" )
     odds_data = dm.pickle_load( "odds_data.pickle" )
@@ -127,7 +129,7 @@ def main( test_years = lib.simu_years, show = True ):
         #selectHorce = SelectHorce( wide_odds_data[race_id], triplet_odds_data[race_id], horce_list )
         #betHorceList, bestScore = selectHorce.selectHorce()
         #key = int( bestScore * 20 )
-        #lib.dicAppend( testDict, key, { "count": 0, "recovery": 0 } )
+        #lib.dic_append( testDict, key, { "count": 0, "recovery": 0 } )
 
         for i in range( 0, min( len( sort_result ), t ) ):
             bet_horce = sort_result[i]

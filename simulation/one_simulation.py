@@ -6,6 +6,7 @@ from tqdm import tqdm
 import matplotlib.pyplot as plt
 
 import SekitobaLibrary as lib
+from SekitobaLibrary import ManageRecoveryScore
 import SekitobaDataManage as dm
 
 def standardization( data ):
@@ -50,9 +51,39 @@ def score_add( score_data ):
 
     return result
     #return softmax( result )
+    
+def recovery_score_create( cluster_data, data, c ):
+    score = 0
+    nama_list = cluster_data["name"]
+    data_type = cluster_data["type"]
+    cluster_list = cluster_data["cluster"]
 
+
+    for cluster in cluster_list:
+        manage_recovery_score = ManageRecoveryScore( {},
+                                                     data_name_list = nama_list,
+                                                     data_type = data_type,
+                                                     cd = cluster )
+
+        for name in cluster.keys():
+            value = data[name][c]
+            add_score = manage_recovery_score.check_score( value, name )
+
+            if add_score == lib.escapeValue:
+                continue
+
+            score += add_score
+
+    return score / len( cluster_data )
+    
 def main( test_years = lib.simu_years, show = True ):
     recovery_rate = 0
+    recovery_cluster_data = dm.pickle_load( "recovery_cluster_data.pickle" )
+    recovery_simu_data = dm.pickle_load( "recovery_simu_data.pickle" )
+    manage_recovery_score = ManageRecoveryScore( {},
+                                                 data_name_list = recovery_cluster_data["name"],
+                                                 data_type = recovery_cluster_data["type"],
+                                                 cd = recovery_cluster_data["cluster"] )
     data = dm.pickle_load( lib.name.simu_name() )
     model_list = dm.pickle_load( lib.name.model_name() )
     #index_data = [ [ 3, 5 ], [ 6, 7, 8 ], [ 7, 8 ] ]
@@ -68,7 +99,7 @@ def main( test_years = lib.simu_years, show = True ):
     mdcd_score = 0
     mdcd_count = 0
     recovery_check = {}
-    t = len( index_data )
+    t = 3#len( index_data )
 
     odds_data = dm.pickle_load( "odds_data.pickle" )
     #users_score_data = dm.pickle_load( "users_score_data.pickle")
@@ -86,36 +117,63 @@ def main( test_years = lib.simu_years, show = True ):
         horce_list = []
         score_list = []
         instance_list = []
+        recovery_predict_data = {}
         current_odds = odds_data[race_id]
+
+        predict_recovery_data = {}
+        
+        for horce_id in recovery_simu_data[race_id].keys():
+            for name in recovery_cluster_data["name"]:
+                lib.dic_append( predict_recovery_data, name, [] )
+                data_index = recovery_cluster_data["name"].index( name )
+                predict_recovery_data[name].append( recovery_simu_data[race_id][horce_id]["data"][data_index] )
+
+        for name in recovery_cluster_data["name"]:
+            if recovery_cluster_data["type"][name] == float:
+                predict_recovery_data[name] = lib.standardization( predict_recovery_data[name], abort = [ lib.escapeValue ] )
 
         for horce_id in data[race_id].keys():
             scores = {}
             ex_value = {}
             p_score = 0
 
-            if data[race_id][horce_id]["answer"]["new"]:
-                break
+            #if data[race_id][horce_id]["answer"]["new"]:
+            #    break
 
             for model in model_list:
                 p_score += model.predict( np.array( [ data[race_id][horce_id]["data"] ] ) )[0]
                 
             score_list.append( p_score )
-            ex_value["score"] = p_score
+            ex_value["score"] = 0
             ex_value["rank"] = data[race_id][horce_id]["answer"]["rank"]
             ex_value["odds"] = data[race_id][horce_id]["answer"]["odds"]
             ex_value["popular"] = data[race_id][horce_id]["answer"]["popular"]
             ex_value["horce_id"] = horce_id
+            ex_value["recovery"] = recovery_score_create( recovery_cluster_data,
+                                                          predict_recovery_data,
+                                                          len( horce_list ) )
+            ex_value["rank_score"] = p_score
             horce_list.append( ex_value )
 
         if len( horce_list ) < 5:
             continue
 
         min_score = min( score_list )
+        
+        #horce_list = sorted( horce_list, key=lambda x:x["recovery"], reverse = True )
+        horce_list = sorted( horce_list, key=lambda x:x["rank_score"], reverse = True )
+
+        for i in range( 0, len( horce_list ) ):
+            #horce_list[i]["recovery"] = int( i + 1 )
+            horce_list[i]["rank_score"] = int( i + 1 )
+            horce_list[i]["score"] = horce_list[i]["recovery"]
+            #horce_list[i]["score"] = horce_list[i]["rank_score"]
+
         sort_result = sorted( horce_list, key=lambda x:x["score"], reverse = True )
+        #sort_result = sorted( horce_list, key=lambda x:x["recovery"], reverse = True )
 
         for i in range( 0, len( sort_result ) ):
             rank = sort_result[i]["rank"]
-            score = sort_result[i]["score"]
             mdcd_score += math.pow( rank - ( i + 1 ), 2 )
             mdcd_count += 1
 
@@ -125,23 +183,44 @@ def main( test_years = lib.simu_years, show = True ):
             horce_id = bet_horce["horce_id"]
             rank = bet_horce["rank"]
             score = bet_horce["score"]
-            popular = bet_horce["popular"]
+            popular = int( bet_horce["popular"] )
+
+            #recovery_score = int( sort_result[i]["recovery"] )
+            recovery_score = int( sort_result[i]["rank_score"] )            
+
+            if popular == 1:
+                continue
+            
+            if not recovery_score == 1:
+                continue
+
+            recovery_score = popular
+            #if not recovery_score == 1:
+            #    continue
+            #if recovery_score > 3:
+            #    continue
+            #recovery_score = sort_result[i]["rank_score"]
+            #recovery_score = sort_result[i]["popular"]
             ex_value = score * odds
             line_ex = 1 + i / 0.9
 
-            if not popular in index_data[i]:
-                continue
+            #print( sort_result[i]["recovery"] )
+            #if not recovery_score == 18:
+            #    continue
+
+            #if not popular in index_data[i]:
+            #    continue
 
             #if odds > 60:
             #    continue
             #if ex_value < 1.3:
             #    continue
 
-            lib.dicAppend( test, i, {} )
-            lib.dicAppend( test[i], popular, { "data": 0, "count": 0 } )
-            test[i][popular]["count"] += 1
-            bc = 1#( t - i )
-            #bc = int( 1 + min( ( ex_value - 1 ) * 10, 4 ) )
+            lib.dic_append( test, i, {} )
+            lib.dic_append( test[i], recovery_score, { "data": 0, "count": 0 } )
+            test[i][recovery_score]["count"] += 1
+
+            bc = 1
             test_result["bet_count"] += bc
             test_result["count"] += 1
             money -= int( bc * bet_money )
@@ -149,7 +228,7 @@ def main( test_years = lib.simu_years, show = True ):
             if rank == 1:
                 test_result["one_win"] += 1
                 test_result["one_money"] += odds * bc
-                test[i][popular]["data"] += odds
+                test[i][recovery_score]["data"] += odds
                 money += odds * bc * bet_money
 
             if rank <= min( 3, len( current_odds["複勝"] ) ):
@@ -165,13 +244,10 @@ def main( test_years = lib.simu_years, show = True ):
     one_win_rate = ( test_result["one_win"] / test_result["count"] ) * 100
     three_win_rate = ( test_result["three_win"] / test_result["count"] ) * 100
     
-    #for i in test.keys():
-        #for p in sorted( test[i].keys() ):
-            #test[i][p]["data"] /= test[i][p]["count"]
-            #if test[i][p]["data"] < 1:
-            #    continue
-
-            #print( "index:{} popular:{} recovery:{} count:{}".format( i, p, test[i][p]["data"] * 100, test[i][p]["count"] ) )
+    for i in test.keys():
+        for p in sorted( test[i].keys() ):
+            test[i][p]["data"] /= test[i][p]["count"]
+            print( "index:{} score:{} recovery:{} count:{}".format( i, p, test[i][p]["data"] * 100, test[i][p]["count"] ) )
 
     if show:
         print( "" )
