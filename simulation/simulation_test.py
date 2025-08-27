@@ -99,6 +99,7 @@ def main( test_years = lib.simu_years, show = True ):
         if not race_id in quinella_odds_data:
             continue
 
+        odds_index = 1
         horce_list = []
         score_list = []
         instance_list = []
@@ -111,7 +112,7 @@ def main( test_years = lib.simu_years, show = True ):
             for name in recovery_cluster_data["name"]:
                 lib.dic_append( predict_recovery_data, name, [] )
                 data_index = recovery_cluster_data["name"].index( name )
-                predict_recovery_data[name].append( recovery_simu_data[race_id][horce_id]["data"][data_index] )
+                predict_recovery_data[name].append( recovery_simu_data[race_id][horce_id][odds_index]["data"][data_index] )
 
         for name in recovery_cluster_data["name"]:
             if recovery_cluster_data["type"][name] == float:
@@ -126,14 +127,14 @@ def main( test_years = lib.simu_years, show = True ):
             #    break
 
             for model in model_list:
-                p_score += model.predict( np.array( [ data[race_id][horce_id]["data"] ] ) )[0]
+                p_score += model.predict( np.array( [ data[race_id][horce_id][odds_index]["data"] ] ) )[0]
                 
             score_list.append( p_score )
             ex_value["score"] = 0
-            ex_value["rank"] = data[race_id][horce_id]["answer"]["rank"]
-            ex_value["odds"] = data[race_id][horce_id]["answer"]["odds"]
-            ex_value["popular"] = data[race_id][horce_id]["answer"]["popular"]
-            ex_value["horce_num"] = data[race_id][horce_id]["answer"]["horce_num"]
+            ex_value["rank"] = data[race_id][horce_id][odds_index]["answer"]["rank"]
+            ex_value["odds"] = data[race_id][horce_id][odds_index]["answer"]["odds"]
+            ex_value["popular"] = data[race_id][horce_id][odds_index]["answer"]["popular"]
+            ex_value["horce_num"] = data[race_id][horce_id][odds_index]["answer"]["horce_num"]
             ex_value["horce_id"] = horce_id
             ex_value["recovery"] = recovery_score_create( recovery_cluster_data,
                                                           predict_recovery_data,
