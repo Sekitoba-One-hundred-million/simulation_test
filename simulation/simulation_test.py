@@ -123,8 +123,8 @@ def main( test_years = lib.simu_years, show = True ):
             ex_value = {}
             p_score = 0
 
-            #if data[race_id][horce_id]["answer"]["new"]:
-            #    break
+            if data[race_id][horce_id][odds_index]["answer"]["new"]:
+                break
 
             for model in model_list:
                 p_score += model.predict( np.array( [ data[race_id][horce_id][odds_index]["data"] ] ) )[0]
