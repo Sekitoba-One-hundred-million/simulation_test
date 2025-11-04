@@ -73,7 +73,7 @@ def main( test_years = lib.simu_years, show = True ):
     test = {}
     test_result = { "count": 0, "bet_count": 0, "one_money": 0, "three_money": 0, "one_win": 0, "three_win": 0, "three_money": 0 }
     money = 2000
-    bet_money = 10#int( money / 200 )
+    bet_money = 20#int( money / 200 )
     money_list = []
     ave_score = 0
     win_score = 0
@@ -82,6 +82,8 @@ def main( test_years = lib.simu_years, show = True ):
     mdcd_count = 0
     recovery_check = {}
     t = 1#len( index_data )
+    recovery_odds_index = 0
+    odds_index = 0
 
     odds_data = dm.pickle_load( "odds_data.pickle" )
     #users_score_data = dm.pickle_load( "users_score_data.pickle")
@@ -99,7 +101,9 @@ def main( test_years = lib.simu_years, show = True ):
         if not race_id in quinella_odds_data:
             continue
 
-        odds_index = 1
+        if not race_id in recovery_simu_data:
+            continue
+        
         horce_list = []
         score_list = []
         instance_list = []
@@ -112,7 +116,7 @@ def main( test_years = lib.simu_years, show = True ):
             for name in recovery_cluster_data["name"]:
                 lib.dic_append( predict_recovery_data, name, [] )
                 data_index = recovery_cluster_data["name"].index( name )
-                predict_recovery_data[name].append( recovery_simu_data[race_id][horce_id][odds_index]["data"][data_index] )
+                predict_recovery_data[name].append( recovery_simu_data[race_id][horce_id][recovery_odds_index]["data"][data_index] )
 
         for name in recovery_cluster_data["name"]:
             if recovery_cluster_data["type"][name] == float:
@@ -169,12 +173,12 @@ def main( test_years = lib.simu_years, show = True ):
             score = bet_horce["score"]
             popular = int( bet_horce["popular"] )
             ex_value = bet_horce["rate"] * odds
-            recovery_score = bet_horce["recovery"]
+            recovery_score_index = bet_horce["recovery"]
 
-            if ex_value < 1:
-                continue
+            #if ex_value < 1:
+            #    continue
 
-            if 5 < recovery_score:
+            if 3 < recovery_score_index:
                 continue
 
             base_horce_num = int( bet_horce["horce_num"] )
@@ -185,21 +189,39 @@ def main( test_years = lib.simu_years, show = True ):
                 quinella_horce_num = int( quinella_horce["horce_num"] )
                 min_horce_num = min( base_horce_num, quinella_horce_num )
                 max_horce_num = max( base_horce_num, quinella_horce_num )
-                quinella_odds = quinella_odds_data[race_id][min_horce_num][max_horce_num]
 
-                if quinella_horce["recovery"] < 5:
-                    quinella_bet_list.append( { "odds": quinella_odds, "rank": quinella_horce["rank"] } )
+                try:
+                    quinella_odds = quinella_odds_data[race_id][min_horce_num][max_horce_num]
+                except:
+                    continue
                 
-            bc = 1
-            test_result["bet_count"] += bc * len( quinella_bet_list )
+                if quinella_odds < 3:
+                    continue
+                
+                if 30 < quinella_odds:
+                    continue
+
+                if quinella_horce["recovery"] < 3:
+                    quinella_bet_list.append( { "odds": quinella_odds, "rank": int( quinella_horce["rank"] ), "bc": 1 } )
+
+            if len( quinella_bet_list ) == 0:
+                continue
+                    
+            bc = 0
+                
+            for qb in quinella_bet_list:
+                bc += qb["bc"]
+                
+            test_result["bet_count"] += bc
             test_result["count"] += 1
-            money -= int( bc * bet_money * len( quinella_bet_list ) )
+            money -= int( bc * bet_money )
 
             if 2 < rank:
                 continue
             
             for r in range( 0, len( quinella_bet_list ) ):
                 if quinella_bet_list[r]["rank"] < 3:
+                    bc = quinella_bet_list[r]["bc"]
                     odds = quinella_bet_list[r]["odds"]
                     test_result["one_win"] += 1
                     test_result["one_money"] += odds * bc
