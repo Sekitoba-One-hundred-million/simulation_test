@@ -167,7 +167,7 @@ def main( test_years = lib.simu_years, show = True ):
             ex_value = bet_horce["rate"] * odds
             recovery_score = bet_horce["recovery"]
 
-            if ex_value < 1:
+            if ex_value < 1.0:
                 continue
 
             if 5 < recovery_score:
@@ -188,11 +188,11 @@ def main( test_years = lib.simu_years, show = True ):
                 test[tt]["data"] += odds
                 money += odds * bc * bet_money
 
-            if rank <= min( 3, len( current_odds["複勝"] ) ):
-                rank_index = int( bet_horce["rank"] - 1 )
-                three_odds = current_odds["複勝"][rank_index] / 100
-                test_result["three_win"] += 1
-                test_result["three_money"] += three_odds# * bet_money
+            #if rank <= min( 3, len( current_odds["複勝"] ) ):
+            #    rank_index = int( bet_horce["rank"] - 1 )
+            #    three_odds = current_odds["複勝"][rank_index] / 100
+            #    test_result["three_win"] += 1
+            #    test_result["three_money"] += three_odds# * bet_money
 
         money_list.append( money )
     
@@ -209,9 +209,9 @@ def main( test_years = lib.simu_years, show = True ):
         print( "" )
         print( "選択数:{}".format( t ) )
         print( "単勝 回収率{}%".format( one_recovery_rate ) )
-        print( "複勝 回収率{}%".format( three_recovery_rate ) )
+        #print( "複勝 回収率{}%".format( three_recovery_rate ) )
         print( "単勝 勝率{}%".format( one_win_rate ) )
-        print( "複勝 勝率{}%".format( three_win_rate ) )
+        #print( "複勝 勝率{}%".format( three_win_rate ) )
         print( "賭けたレース数{}回".format( test_result["count"] ) )
         print( "賭けた金額{}".format( test_result["bet_count"] ) )
         print( "金額:{}".format( money ) )
