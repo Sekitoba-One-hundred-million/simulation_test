@@ -72,7 +72,7 @@ def main( test_years = lib.simu_years, show = True ):
     index_data = [ [ 3, 5 ], [ 6, 7, 8 ] ]
     test = {}
     test_result = { "count": 0, "bet_count": 0, "one_money": 0, "three_money": 0, "one_win": 0, "three_win": 0, "three_money": 0 }
-    money = 2000
+    money = 3000
     bet_money = 20#int( money / 200 )
     money_list = []
     ave_score = 0
