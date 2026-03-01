@@ -86,7 +86,7 @@ def main( test_years = lib.simu_years, show = True ):
 
     odds_data = dm.pickle_load( "odds_data.pickle" )
     #users_score_data = dm.pickle_load( "users_score_data.pickle")
-    race_id_list = list( data.keys() )
+    race_id_list = list( recovery_simu_data.keys() )
     random.shuffle( race_id_list )
 
     for race_id in tqdm( race_id_list ):
@@ -142,14 +142,14 @@ def main( test_years = lib.simu_years, show = True ):
         if len( horce_list ) < 5:
             continue
 
-        min_score = min( score_list )
-        
+        min_score = min( score_list )        
         horce_list = sorted( horce_list, key=lambda x:x["recovery"], reverse = True )
 
         for i in range( 0, len( horce_list ) ):
             horce_list[i]["recovery"] = int( i + 1 )
 
         sort_result = sorted( horce_list, key=lambda x:x["score"], reverse = True )
+        #sort_result = horce_list#sorted( horce_list, key=lambda x:x["score"], reverse = True )
         change_win_rate( sort_result )
 
         for i in range( 0, len( sort_result ) ):
@@ -167,10 +167,10 @@ def main( test_years = lib.simu_years, show = True ):
             ex_value = bet_horce["rate"] * odds
             recovery_score = bet_horce["recovery"]
 
-            if ex_value < 1.0:
-                continue
+            #if ex_value < 1.0:
+            #    continue
 
-            if 5 < recovery_score:
+            if not 1 == recovery_score:
                 continue
 
             tt = bet_horce["recovery"]

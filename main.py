@@ -11,11 +11,13 @@ def main():
     #from simulation import recovery_simulation
     from simulation import simulation_test
     from simulation import one_simulation
+    from simulation import ex_simulation
 
     lib.name.set_name( "rank" )
     lib.log.set_write( False )
-    simulation_test.main()
+    #simulation_test.main()
     #one_simulation.main()
+    ex_simulation.main()
 
 if __name__ == "__main__":
     main()

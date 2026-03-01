@@ -33,30 +33,6 @@ def recovery_score_create( cluster_data, data, c ):
 
     return score / len( cluster_data )
 
-def change_win_rate( horce_data_list ):
-    score_list = []
-    odds_list = []
-    
-    for horce_data in horce_data_list:
-        score_list.append( horce_data["rank_score"] )
-        odds_list.append( horce_data["odds"] )
-        
-    min_score = min( score_list )
-    all_score = 0
-
-    for i in range( 0, len( score_list ) ):
-        score_list[i] = max( score_list[i] - min_score * 1.1, 0 )
-        score_list[i] *= ( 2 - ( i / 10 ) )
-        score_list[i] = math.pow( score_list[i], 2 )
-        all_score += score_list[i]
-
-    for i in range( 0, len( score_list ) ):
-        score_list[i] = ( score_list[i] / all_score )
-        horce_data_list[i]["rate"] = score_list[i]
-
-    #print( "rate:{}".format( score_list ) )
-    #print( "odds:{}".format( odds_list ) )
-
 def main( test_years = lib.simu_years, show = True ):
     recovery_rate = 0
     recovery_cluster_data = dm.pickle_load( "recovery_cluster_data.pickle" )
@@ -125,8 +101,8 @@ def main( test_years = lib.simu_years, show = True ):
             ex_value = {}
             p_score = 0
 
-            if data[race_id][horce_id]["answer"]["new"]:
-                break
+            #if data[race_id][horce_id]["answer"]["new"]:
+            #    break
 
             for model in model_list:
                 p_score += model.predict( np.array( [ data[race_id][horce_id]["data"] ] ) )[0]
@@ -156,7 +132,7 @@ def main( test_years = lib.simu_years, show = True ):
             horce_list[i]["recovery"] = int( i + 1 )
 
         sort_result = sorted( horce_list, key=lambda x:x["score"], reverse = True )
-        change_win_rate( sort_result )
+        lib.change_win_rate( sort_result )
 
         for i in range( 0, len( sort_result ) ):
             rank = sort_result[i]["rank"]
@@ -174,16 +150,16 @@ def main( test_years = lib.simu_years, show = True ):
             ex_value = bet_horce["rate"] * odds
             recovery_score_index = bet_horce["recovery"]
 
-            if ex_value < 1:
-                continue
-
-            #if 3 < recovery_score_index:
+            #if ex_value < 1:
             #    continue
+
+            if 3 < recovery_score_index:
+                continue
 
             base_horce_num = int( bet_horce["horce_num"] )
             quinella_bet_list = []
 
-            for r in range( 1, len( sort_result ) ):
+            for r in range( 1, min( len( sort_result ), 5 ) ):
                 quinella_horce = sort_result[r]
                 quinella_horce_num = int( quinella_horce["horce_num"] )
                 min_horce_num = min( base_horce_num, quinella_horce_num )
@@ -194,14 +170,16 @@ def main( test_years = lib.simu_years, show = True ):
                 except:
                     continue
                 
-                if quinella_odds < 3:
-                    continue
+                #if quinella_odds < 3:
+                #    continue
                 
-                if 100 < quinella_odds:
-                    continue
+                #if 100 < quinella_odds:
+                #    continue
 
-                if quinella_horce["recovery"] < 3:
-                    quinella_bet_list.append( { "odds": quinella_odds, "rank": int( quinella_horce["rank"] ), "bc": 1 } )
+                h_score = quinella_horce["recovery"] + i
+                if quinella_horce["recovery"] < 4:
+                    bc = 1
+                    quinella_bet_list.append( { "odds": quinella_odds, "rank": int( quinella_horce["rank"] ), "bc": bc } )
 
                 #if quinella_horce["rank_index"] < 4:
                 #    quinella_bet_list.append( { "odds": quinella_odds, "rank": int( quinella_horce["rank"] ), "bc": 1 } )
