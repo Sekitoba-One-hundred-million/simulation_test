@@ -47,8 +47,8 @@ def change_win_rate( horce_data_list ):
 
     for i in range( 0, len( score_list ) ):
         score_list[i] = max( score_list[i] - min_score, 0 )
-        #score_list[i] = math.pow( score_list[i], max( 2 - ( i / 10 ), 0 ) )
-        score_list[i] = math.pow( score_list[i], 2 )
+        score_list[i] = math.pow( score_list[i], max( int( 2 - ( i / 10 ) ), 0 ) )
+        #score_list[i] = math.pow( score_list[i], 2 )
         all_score += score_list[i]
 
     #print( score_list )
@@ -121,7 +121,8 @@ def main( test_years = lib.simu_years, show = True ):
 
         min_score = min( score_list )        
         sort_result = sorted( horce_list, key=lambda x:x["score"], reverse = True )
-        change_win_rate( sort_result )
+        #change_win_rate( sort_result )
+        lib.change_win_rate( sort_result )
 
         for i in range( 0, len( sort_result ) ):
             rank = sort_result[i]["rank"]
@@ -137,11 +138,11 @@ def main( test_years = lib.simu_years, show = True ):
             popular = int( bet_horce["popular"] )
             ex_value = bet_horce["rate"] * odds
 
-            if ex_value < 0.8:
+            if ex_value < 1:
                 continue
             
-            if odds < 2:
-                continue
+            #if odds < 10:
+            #    continue
 
             bc = 1
             test_result["bet_count"] += bc
@@ -166,8 +167,9 @@ def main( test_years = lib.simu_years, show = True ):
         money_list.append( money )
     
     one_recovery_rate = ( test_result["one_money"] / test_result["bet_count"] ) * 100
-    three_recovery_rate = ( test_result["three_money"] / test_result["bet_count"] ) * 100
+    #three_recovery_rate = ( test_result["three_money"] / test_result["bet_count"] ) * 100
     one_win_rate = ( test_result["one_win"] / test_result["count"] ) * 100
+    #three_win_rate = ( test_result["three_win"] / test_result["count"] ) * 100
     
     if show:
         print( "" )

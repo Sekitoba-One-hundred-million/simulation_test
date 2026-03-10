@@ -150,7 +150,7 @@ def main( test_years = lib.simu_years, show = True ):
 
         sort_result = sorted( horce_list, key=lambda x:x["score"], reverse = True )
         #sort_result = horce_list#sorted( horce_list, key=lambda x:x["score"], reverse = True )
-        change_win_rate( sort_result )
+        lib.change_win_rate( sort_result )
 
         for i in range( 0, len( sort_result ) ):
             rank = sort_result[i]["rank"]
@@ -170,8 +170,8 @@ def main( test_years = lib.simu_years, show = True ):
             #if ex_value < 1.0:
             #    continue
 
-            if not 1 == recovery_score:
-                continue
+            #if not 1 == recovery_score:
+            #    continue
 
             tt = bet_horce["recovery"]
             lib.dic_append( test, tt, { "data": 0, "count": 0 } )

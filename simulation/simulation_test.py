@@ -150,11 +150,11 @@ def main( test_years = lib.simu_years, show = True ):
             ex_value = bet_horce["rate"] * odds
             recovery_score_index = bet_horce["recovery"]
 
-            #if ex_value < 1:
-            #    continue
-
-            if 3 < recovery_score_index:
+            if ex_value < 0.9:
                 continue
+
+            #if 3 < recovery_score_index:
+            #    continue
 
             base_horce_num = int( bet_horce["horce_num"] )
             quinella_bet_list = []
@@ -177,7 +177,8 @@ def main( test_years = lib.simu_years, show = True ):
                 #    continue
 
                 h_score = quinella_horce["recovery"] + i
-                if quinella_horce["recovery"] < 4:
+                #if quinella_horce["recovery"] < 3:
+                if quinella_horce["rank_index"] < 3:
                     bc = 1
                     quinella_bet_list.append( { "odds": quinella_odds, "rank": int( quinella_horce["rank"] ), "bc": bc } )
 
