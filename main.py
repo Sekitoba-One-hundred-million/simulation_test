@@ -12,12 +12,14 @@ def main():
     from simulation import simulation_test
     from simulation import one_simulation
     from simulation import ex_simulation
+    from simulation import triplet_simulation
 
-    lib.name.set_name( "rank" )
+    lib.name.set_name( "time_index" )
     lib.log.set_write( False )
     #simulation_test.main()
-    #one_simulation.main()
-    ex_simulation.main()
+    one_simulation.main()
+    #ex_simulation.main()
+    #triplet_simulation.main()
 
 if __name__ == "__main__":
     main()

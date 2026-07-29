@@ -9,87 +9,83 @@ import SekitobaLibrary as lib
 from SekitobaLibrary import ManageRecoveryScore
 import SekitobaDataManage as dm
 
-def recovery_score_create( cluster_data, data, c ):
+
+def recovery_score_create(cluster_data, data, c):
     score = 0
     nama_list = cluster_data["name"]
     data_type = cluster_data["type"]
     cluster_list = cluster_data["cluster"]
 
-
     for cluster in cluster_list:
-        manage_recovery_score = ManageRecoveryScore( {},
-                                                     data_name_list = nama_list,
-                                                     data_type = data_type,
-                                                     cd = cluster )
+        manage_recovery_score = ManageRecoveryScore({}, data_name_list=nama_list, data_type=data_type, cd=cluster)
 
         for name in cluster.keys():
             value = data[name][c]
-            add_score = manage_recovery_score.check_score( value, name )
+            add_score = manage_recovery_score.check_score(value, name)
 
             if add_score == lib.escapeValue:
                 continue
 
             score += add_score
 
-    return score / len( cluster_data )
+    return score / len(cluster_data)
 
-def change_win_rate( horce_data_list ):
+
+def change_win_rate(horce_data_list):
     score_list = []
     odds_list = []
-    
+
     for horce_data in horce_data_list:
-        score_list.append( horce_data["rank_score"] )
-        odds_list.append( horce_data["odds"] )
-        
-    min_score = min( score_list )
+        score_list.append(horce_data["rank_score"])
+        odds_list.append(horce_data["odds"])
+
+    min_score = min(score_list)
     all_score = 0
 
-    for i in range( 0, len( score_list ) ):
-        score_list[i] = max( score_list[i] - min_score * 1.1, 0 )
-        score_list[i] *= ( 2 - ( i / 10 ) )
-        score_list[i] = math.pow( score_list[i], 2 )
+    for i in range(0, len(score_list)):
+        score_list[i] = max(score_list[i] - min_score * 1.1, 0)
+        score_list[i] *= 2 - (i / 10)
+        score_list[i] = math.pow(score_list[i], 2)
         all_score += score_list[i]
 
-    for i in range( 0, len( score_list ) ):
-        score_list[i] = ( score_list[i] / all_score )
+    for i in range(0, len(score_list)):
+        score_list[i] = score_list[i] / all_score
         horce_data_list[i]["rate"] = score_list[i]
 
-    #print( "rate:{}".format( score_list ) )
-    #print( "odds:{}".format( odds_list ) )
+    # print( "rate:{}".format( score_list ) )
+    # print( "odds:{}".format( odds_list ) )
 
-def main( test_years = lib.simu_years, show = True ):
+
+def data_load(model_data, simu_data, reverse_list, name, reverse):
+    simu_data[name] = dm.pickle_load(name + "_simu_data.pickle")
+    model_data[name] = dm.pickle_load(name + "_model.pickle")
+
+    if reverse:
+        reverse_list.append(name)
+
+
+def main(test_years=lib.simu_years, show=True):
     recovery_rate = 0
-    recovery_cluster_data = dm.pickle_load( "recovery_cluster_data.pickle" )
-    #recovery_cluster_data = dm.pickle_load( "rank_cluster_data.pickle" )
-    recovery_simu_data = dm.pickle_load( "recovery_simu_data.pickle" )
-    #quinella_odds_data = dm.pickle_load( "quinella_odds_data.pickle" )
-    manage_recovery_score = ManageRecoveryScore( {},
-                                                 data_name_list = recovery_cluster_data["name"],
-                                                 data_type = recovery_cluster_data["type"],
-                                                 cd = recovery_cluster_data["cluster"] )
-    data = dm.pickle_load( lib.name.simu_name() )
-    model_list = dm.pickle_load( lib.name.model_name() )
-    #index_data = [ [ 3, 5 ], [ 6, 7, 8 ], [ 7, 8 ] ]
-    index_data = [ [ 3, 5 ], [ 6, 7, 8 ] ]
-    test = {}
-    test_result = { "count": 0, "bet_count": 0, "one_money": 0, "three_money": 0, "one_win": 0, "three_win": 0, "three_money": 0 }
-    money = 2000
-    bet_money = 50#int( money / 200 )
+    BASE_KEY = "time_index"
+    model_data = {}
+    simu_data = {}
+    revrse_list = []
+    data_load(model_data, simu_data, revrse_list, "rank", True)
+    data_load(model_data, simu_data, revrse_list, "time_index", True)
+    data_load(model_data, simu_data, revrse_list, "race_time", False)
+    data_load(model_data, simu_data, revrse_list, "diff", False)
+    data_load(model_data, simu_data, revrse_list, "rate", True)
+
+    money = 3000
+    bet_money = 30  # int( money / 200 )
     money_list = []
-    ave_score = 0
-    win_score = 0
-    lose_score = 0
-    mdcd_score = 0
-    mdcd_count = 0
-    recovery_check = {}
-    t = 1#len( index_data )
+    check_data = {"bet_count": 0, "win": 0, "money": 0}
+    odds_data = dm.pickle_load("odds_data.pickle")
+    # users_score_data = dm.pickle_load( "users_score_data.pickle")
+    race_id_list = list(simu_data[BASE_KEY].keys())
+    random.shuffle(race_id_list)
 
-    odds_data = dm.pickle_load( "odds_data.pickle" )
-    #users_score_data = dm.pickle_load( "users_score_data.pickle")
-    race_id_list = list( recovery_simu_data.keys() )
-    random.shuffle( race_id_list )
-
-    for race_id in tqdm( race_id_list ):
+    for race_id in tqdm(race_id_list):
         year = race_id[0:4]
         race_place_num = race_id[4:6]
         number = race_id[-2:]
@@ -97,125 +93,77 @@ def main( test_years = lib.simu_years, show = True ):
         if not year in test_years:
             continue
 
+        all_score = 0
         horce_list = []
-        score_list = []
-        instance_list = []
-        recovery_predict_data = {}
         current_odds = odds_data[race_id]
+        skip = False
 
-        predict_recovery_data = {}
-        
-        for horce_id in recovery_simu_data[race_id].keys():
-            for name in recovery_cluster_data["name"]:
-                lib.dic_append( predict_recovery_data, name, [] )
-                data_index = recovery_cluster_data["name"].index( name )
-                predict_recovery_data[name].append( recovery_simu_data[race_id][horce_id]["data"][data_index] )
+        for kind in model_data.keys():
+            if not race_id in simu_data[kind]:
+                skip = True
+                break
 
-        for name in recovery_cluster_data["name"]:
-            if recovery_cluster_data["type"][name] == float:
-                predict_recovery_data[name] = lib.standardization( predict_recovery_data[name], abort = [ lib.escapeValue ] )
-
-        for horce_id in data[race_id].keys():
-            scores = {}
-            ex_value = {}
-            p_score = 0
-
-            #if data[race_id][horce_id]["answer"]["new"]:
-            #    break
-
-            for model in model_list:
-                p_score += model.predict( np.array( [ data[race_id][horce_id]["data"] ] ) )[0]
-                
-            score_list.append( p_score )
-            ex_value["score"] = 0
-            ex_value["rank"] = data[race_id][horce_id]["answer"]["rank"]
-            ex_value["odds"] = data[race_id][horce_id]["answer"]["odds"]
-            ex_value["popular"] = data[race_id][horce_id]["answer"]["popular"]
-            ex_value["horce_id"] = horce_id
-            ex_value["recovery"] = recovery_score_create( recovery_cluster_data,
-                                                          predict_recovery_data,
-                                                          len( horce_list ) )
-            ex_value["rank_score"] = p_score
-            ex_value["score"] = p_score
-            horce_list.append( ex_value )
-
-        if len( horce_list ) < 5:
+        if skip:
             continue
 
-        min_score = min( score_list )        
-        horce_list = sorted( horce_list, key=lambda x:x["recovery"], reverse = True )
+        for horce_id in simu_data[BASE_KEY][race_id].keys():
+            scores = {}
+            ex_value = {}
 
-        for i in range( 0, len( horce_list ) ):
-            horce_list[i]["recovery"] = int( i + 1 )
+            # if simu_data["rank"][race_id][horce_id]["answer"]["new"]:
+            #    break
 
-        sort_result = sorted( horce_list, key=lambda x:x["score"], reverse = True )
-        #sort_result = horce_list#sorted( horce_list, key=lambda x:x["score"], reverse = True )
-        lib.change_win_rate( sort_result )
+            for kind in model_data.keys():
+                scores[kind] = 0
+                for model in model_data[kind]:
+                    if kind == "rate":
+                        scores[kind] += float(
+                            model.predict_proba(np.array([simu_data[kind][race_id][horce_id]["data"]]))[0][-1]
+                        )
+                    else:
+                        scores[kind] += float(model.predict(np.array([simu_data[kind][race_id][horce_id]["data"]]))[0])
 
-        for i in range( 0, len( sort_result ) ):
-            rank = sort_result[i]["rank"]
-            mdcd_score += math.pow( rank - ( i + 1 ), 2 )
-            mdcd_count += 1
+                scores[kind] /= len(model_data[kind])
 
-        for i in range( 0, min( len( sort_result ), t ) ):
-            bet_horce = sort_result[i]
-            odds = bet_horce["odds"]
-            horce_id = bet_horce["horce_id"]
-            rank = bet_horce["rank"]
-            score = bet_horce["score"]
-            popular = int( bet_horce["popular"] )
-            ex_value = bet_horce["rate"] * odds
-            recovery_score = bet_horce["recovery"]
+            scores["time_index"] += simu_data["time_index"][race_id][horce_id]["answer"]["time_index"]
 
-            #if ex_value < 1.0:
-            #    continue
+            for key in scores.keys():
+                ex_value[key + "_score"] = scores[key]
 
-            #if not 1 == recovery_score:
-            #    continue
+            ex_value["rank"] = simu_data[BASE_KEY][race_id][horce_id]["answer"]["rank"]
+            ex_value["odds"] = simu_data[BASE_KEY][race_id][horce_id]["answer"]["odds"]
+            ex_value["popular"] = simu_data[BASE_KEY][race_id][horce_id]["answer"]["popular"]
+            ex_value["horce_id"] = horce_id
+            horce_list.append(ex_value)
 
-            tt = bet_horce["recovery"]
-            lib.dic_append( test, tt, { "data": 0, "count": 0 } )
-            test[tt]["count"] += 1
+        if len(horce_list) < 5:
+            continue
 
-            bc = 1
-            test_result["bet_count"] += bc
-            test_result["count"] += 1
-            money -= int( bc * bet_money )
+        select_horce = lib.SelectHorce(horce_list, list(model_data.keys()), revrse_list, current_odds)
+        get_money = select_horce.exacta(BASE_KEY)
 
-            if rank == 1:
-                test_result["one_win"] += 1
-                test_result["one_money"] += odds * bc
-                test[tt]["data"] += odds
-                money += odds * bc * bet_money
+        if get_money == lib.escapeValue:
+            continue
 
-            #if rank <= min( 3, len( current_odds["複勝"] ) ):
-            #    rank_index = int( bet_horce["rank"] - 1 )
-            #    three_odds = current_odds["複勝"][rank_index] / 100
-            #    test_result["three_win"] += 1
-            #    test_result["three_money"] += three_odds# * bet_money
+        if get_money > 0:
+            check_data["win"] += 1
+            check_data["money"] += get_money
 
-        money_list.append( money )
-    
-    one_recovery_rate = ( test_result["one_money"] / test_result["bet_count"] ) * 100
-    three_recovery_rate = ( test_result["three_money"] / test_result["bet_count"] ) * 100
-    one_win_rate = ( test_result["one_win"] / test_result["count"] ) * 100 * t
-    three_win_rate = ( test_result["three_win"] / test_result["count"] ) * 100 * t
-    
-    for i in sorted( test.keys() ):
-        test[i]["data"] /= test[i]["count"]
-        print( "index:{} recovery:{} count:{}".format( i, test[i]["data"] * 100, test[i]["count"] ) )
+        check_data["bet_count"] += 1
+        money += get_money * bet_money
+        money_list.append(money)
+
+    moeny_rate = (check_data["money"] / check_data["bet_count"]) * 100
+    win_rate = (check_data["win"] / check_data["bet_count"]) * 100
 
     if show:
-        print( "" )
-        print( "選択数:{}".format( t ) )
-        print( "単勝 回収率{}%".format( one_recovery_rate ) )
-        #print( "複勝 回収率{}%".format( three_recovery_rate ) )
-        print( "単勝 勝率{}%".format( one_win_rate ) )
-        #print( "複勝 勝率{}%".format( three_win_rate ) )
-        print( "賭けたレース数{}回".format( test_result["count"] ) )
-        print( "賭けた金額{}".format( test_result["bet_count"] ) )
-        print( "金額:{}".format( money ) )
-        print( "最低金額:{}".format( min( money_list ) ) )
-        print( "mdcd:{}".format( round( mdcd_score / mdcd_count, 4 ) ) )
-    
-    return one_win_rate, three_win_rate, round( mdcd_score / mdcd_count, 4 )
+        print("")
+        print("回収率{}%".format(moeny_rate))
+        print("勝率{}%".format(win_rate))
+        print("賭けたレース数{}回".format(check_data["bet_count"]))
+        print("賭けた金額{}".format(check_data["bet_count"] * bet_money))
+        print("金額:{}".format(money))
+        print("最低金額:{}".format(min(money_list)))
+        # print( "mdcd:{}".format( round( mdcd_score / mdcd_count, 4 ) ) )
+
+    # return one_win_rate, three_win_rate, round( mdcd_score / mdcd_count, 4 )
