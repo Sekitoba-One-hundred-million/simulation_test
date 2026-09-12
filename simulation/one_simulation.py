@@ -103,6 +103,11 @@ def main(test_years=lib.simu_years, show=True):
                 skip = True
                 break
 
+            for horce_id in simu_data[BASE_KEY][race_id].keys():
+                if not horce_id in simu_data[kind][race_id]:
+                    skip = True
+                    break
+
         if skip:
             continue
 
