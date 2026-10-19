@@ -66,7 +66,7 @@ def data_load(model_data, simu_data, reverse_list, name, reverse):
 
 def main(test_years=lib.simu_years, show=True):
     recovery_rate = 0
-    BASE_KEY = "time_index"
+    BASE_KEY = "rate"
     model_data = {}
     simu_data = {}
     revrse_list = []
@@ -145,7 +145,8 @@ def main(test_years=lib.simu_years, show=True):
             continue
 
         select_horce = lib.SelectHorce(horce_list, list(model_data.keys()), revrse_list, current_odds)
-        get_money = select_horce.exacta(BASE_KEY)
+        # get_money = select_horce.exacta(BASE_KEY)
+        get_money = select_horce.one(BASE_KEY)
 
         if get_money == lib.escapeValue:
             continue
